@@ -1,0 +1,254 @@
+
+document.addEventListener("DOMContentLoaded", () => {
+
+  // PRELOADER
+  const loader = document.getElementById("loader");
+
+  window.addEventListener("load", () => {
+    setTimeout(() => loader.classList.add("hidden"), 500);
+  });
+
+  // HEADER SCROLL EFFECT
+  const header = document.getElementById("header");
+  const backTop = document.getElementById("backTop");
+
+  function handleScroll() {
+    header.classList.toggle("scrolled", window.scrollY > 50);
+    backTop.classList.toggle("visible", window.scrollY > 500);
+  }
+
+  window.addEventListener("scroll", handleScroll);
+  handleScroll();
+
+  // MOBILE NAVIGATION
+  const menuToggle = document.getElementById("menuToggle");
+  const nav = document.getElementById("nav");
+
+  function closeMenu() {
+    nav.classList.remove("open");
+    menuToggle.classList.remove("active");
+    menuToggle.setAttribute("aria-expanded", "false");
+    document.body.classList.remove("no-scroll");
+  }
+
+  menuToggle.addEventListener("click", () => {
+    const isOpen = nav.classList.toggle("open");
+    menuToggle.classList.toggle("active", isOpen);
+    menuToggle.setAttribute("aria-expanded", String(isOpen));
+    document.body.classList.toggle("no-scroll", isOpen);
+  });
+
+  nav.querySelectorAll("a").forEach(link => {
+    link.addEventListener("click", closeMenu);
+  });
+
+  // BACK TO TOP
+  backTop.addEventListener("click", () => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  });
+
+  // SCROLL REVEAL
+  const revealElements = document.querySelectorAll(".reveal");
+
+  if ("IntersectionObserver" in window) {
+    const observer = new IntersectionObserver(entries => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add("visible");
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.12 });
+
+    revealElements.forEach(el => observer.observe(el));
+  } else {
+    revealElements.forEach(el => el.classList.add("visible"));
+  }
+
+  // PORTFOLIO FILTERS
+  const filterButtons = document.querySelectorAll(".filter");
+  const galleryItems = document.querySelectorAll(".gallery-item");
+
+  filterButtons.forEach(button => {
+    button.addEventListener("click", () => {
+      filterButtons.forEach(btn => btn.classList.remove("active"));
+      button.classList.add("active");
+
+      const filter = button.dataset.filter;
+
+      galleryItems.forEach(item => {
+        const matches =
+          filter === "all" || item.dataset.category === filter;
+
+        item.classList.toggle("filtered-out", !matches);
+      });
+    });
+  });
+
+  // IMAGE LIGHTBOX
+  const lightbox = document.getElementById("lightbox");
+  const lightboxImage = document.getElementById("lightboxImage");
+  const lightboxClose = document.getElementById("lightboxClose");
+  const lightboxPrev = document.getElementById("lightboxPrev");
+  const lightboxNext = document.getElementById("lightboxNext");
+  const lightboxCount = document.getElementById("lightboxCount");
+
+  let currentImage = 0;
+
+  function visibleGalleryItems() {
+    return [...galleryItems].filter(item =>
+      !item.classList.contains("filtered-out")
+    );
+  }
+
+  function showImage(index) {
+    const items = visibleGalleryItems();
+    if (!items.length) return;
+
+    currentImage = (index + items.length) % items.length;
+
+    const selected = items[currentImage];
+    lightboxImage.src = selected.dataset.full;
+    lightboxImage.alt = selected.querySelector("img").alt;
+    lightboxCount.textContent =
+      `${String(currentImage + 1).padStart(2, "0")} / ${String(items.length).padStart(2, "0")}`;
+  }
+
+  function openLightbox(index) {
+    showImage(index);
+    lightbox.classList.add("open");
+    lightbox.setAttribute("aria-hidden", "false");
+    document.body.classList.add("no-scroll");
+    lightboxClose.focus();
+  }
+
+  function closeLightbox() {
+    lightbox.classList.remove("open");
+    lightbox.setAttribute("aria-hidden", "true");
+    document.body.classList.remove("no-scroll");
+    lightboxImage.src = "";
+  }
+
+  galleryItems.forEach(item => {
+    item.addEventListener("click", () => {
+      const items = visibleGalleryItems();
+      openLightbox(items.indexOf(item));
+    });
+  });
+
+  lightboxClose.addEventListener("click", closeLightbox);
+  lightboxPrev.addEventListener("click", () => showImage(currentImage - 1));
+  lightboxNext.addEventListener("click", () => showImage(currentImage + 1));
+
+  lightbox.addEventListener("click", event => {
+    if (event.target === lightbox) closeLightbox();
+  });
+
+  document.addEventListener("keydown", event => {
+    if (!lightbox.classList.contains("open")) return;
+
+    if (event.key === "Escape") closeLightbox();
+    if (event.key === "ArrowLeft") showImage(currentImage - 1);
+    if (event.key === "ArrowRight") showImage(currentImage + 1);
+  });
+
+  // TESTIMONIAL SLIDER
+  const testimonials = document.querySelectorAll(".testimonial");
+  const prevButton = document.getElementById("prevTestimonial");
+  const nextButton = document.getElementById("nextTestimonial");
+  const slideNumber = document.getElementById("slideNumber");
+
+  let currentSlide = 0;
+  let sliderTimer;
+
+  function showTestimonial(index) {
+    testimonials[currentSlide].classList.remove("active");
+
+    currentSlide = (index + testimonials.length) % testimonials.length;
+
+    testimonials[currentSlide].classList.add("active");
+
+    slideNumber.textContent =
+      `${String(currentSlide + 1).padStart(2, "0")} / ${String(testimonials.length).padStart(2, "0")}`;
+  }
+
+  function resetSliderTimer() {
+    clearInterval(sliderTimer);
+    sliderTimer = setInterval(() => {
+      showTestimonial(currentSlide + 1);
+    }, 6000);
+  }
+
+  prevButton.addEventListener("click", () => {
+    showTestimonial(currentSlide - 1);
+    resetSliderTimer();
+  });
+
+  nextButton.addEventListener("click", () => {
+    showTestimonial(currentSlide + 1);
+    resetSliderTimer();
+  });
+
+  resetSliderTimer();
+
+  // CONTACT FORM
+  const contactForm = document.getElementById("contactForm");
+  const formStatus = document.getElementById("formStatus");
+
+  // IMPORTANT: Replace with your WhatsApp number.
+  // Use country code and number without + or spaces.
+  const WHATSAPP_NUMBER = "94771234567";
+
+  contactForm.addEventListener("submit", event => {
+    event.preventDefault();
+
+    if (!contactForm.reportValidity()) return;
+
+    const name = document.getElementById("name").value.trim();
+    const email = document.getElementById("email").value.trim();
+    const phone = document.getElementById("phone").value.trim();
+    const date = document.getElementById("weddingDate").value || "Not specified";
+    const service = document.getElementById("service").value;
+    const message = document.getElementById("message").value.trim();
+
+    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    if (!emailPattern.test(email)) {
+      formStatus.textContent = "Please enter a valid email address.";
+      return;
+    }
+
+    const enquiry = `
+Hello Lumora Weddings!
+
+I would like to enquire about your photography services.
+
+Name: ${name}
+Email: ${email}
+Phone: ${phone}
+Wedding Date: ${date}
+Service: ${service}
+
+Message:
+${message}
+    `;
+
+    const whatsappURL =
+      `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(enquiry)}`;
+
+    formStatus.textContent = "Opening WhatsApp to send your enquiry...";
+
+    window.open(whatsappURL, "_blank", "noopener,noreferrer");
+  });
+
+  // HERO PARALLAX (desktop only)
+  const heroImage = document.querySelector(".hero-image");
+
+  if (window.matchMedia("(min-width: 761px) and (prefers-reduced-motion: no-preference)").matches) {
+    window.addEventListener("scroll", () => {
+      const scroll = Math.min(window.scrollY, window.innerHeight);
+      heroImage.style.backgroundPositionY = `${43 + scroll * 0.025}%`;
+    }, { passive: true });
+  }
+
+});
